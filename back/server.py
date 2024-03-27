@@ -4,51 +4,79 @@ import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
 
+# ADD/EDIT/DELETE PATIENT
+# LIST PATIENTS
+# EACH PATIENT: F_NAME, L_NAME, PESEL, ADDRESS(STREET, CITY, POSTAL_CODE)
+# SORTING/SERACH/PAGINATION OF DATA
+# do skminy znaczenie cyfr w peselu i wykorzystanie do filtrowania
+# dopasowanie do tego ludzi podawanych
+# sprawdzanie regexem postal code'u
+
 cred = credentials.Certificate("../firebaseCred.json")
-# firebase_admin.initialize_app(cred)
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://assecoclinic-default-rtdb.firebaseio.com'
 })
 ref = db.reference("/")
-print(ref)
-ref.get("/")
+ref.set({
+    "patients":-1
+})
+ref = db.reference("/patients")
 data = {
-	"Book1":
+	"P1":
 	{
-		"Title": "The Fellowship of the Ring",
-		"Author": "J.R.R. Tolkien",
-		"Genre": "Epic fantasy",
-		"Price": 100
+		"firstName": "first name 1",
+		"lastName": "last name 1",
+		"PESEL": "11111111",
+		"Address": {
+            "city": "city1",
+            "street": "street1",
+            "postal": "postal1"
+        }
 	},
-	"Book2":
+	"P2":
 	{
-		"Title": "The Two Towers",
-		"Author": "J.R.R. Tolkien",
-		"Genre": "Epic fantasy",
-		"Price": 100	
+		"firstName": "first name 2",
+		"lastName": "last name 2",
+		"PESEL": "22222222",
+		"Address": {
+            "city": "city2",
+            "street": "street2",
+            "postal": "postal2"
+        }
 	},
-	"Book3":
+	"P3":
 	{
-		"Title": "The Return of the King",
-		"Author": "J.R.R. Tolkien",
-		"Genre": "Epic fantasy",
-		"Price": 100
+		"firstName": "first name 3",
+		"lastName": "last name 3",
+		"PESEL": "33333333",
+		"Address": {
+            "city": "city3",
+            "street": "street3",
+            "postal": "postal3"
+        }
 	},
-	"Book4":
+	"P4":
 	{
-		"Title": "Brida",
-		"Author": "Paulo Coelho",
-		"Genre": "Fiction",
-		"Price": 100
-	}
+		"firstName": "first name 4",
+		"lastName": "last name 4",
+		"PESEL": "44444444",
+		"Address": {
+            "city": "city4",
+            "street": "street4",
+            "postal": "postal4"
+        }
+	},
 }
 
-config = dotenv_values("../.env")
+for book in data:
+    ref.push(data[book])
+
+# config = dotenv_values("../.env")
+# firebasePass = config.get("PASS")
+
 app = FastAPI()
-firebasePass = config.get("PASS")
 
 @app.get("/patients")
 async def getPatients():
-    ref.set(data)
-    print(ref.get())
+    data = ref.get()
     return data
