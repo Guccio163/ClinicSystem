@@ -1,82 +1,69 @@
 from fastapi import FastAPI
-from dotenv import dotenv_values
 import firebase_admin
 from firebase_admin import credentials
 from firebase_admin import db
+from fastapi.middleware.cors import CORSMiddleware
 
-# ADD/EDIT/DELETE PATIENT
-# LIST PATIENTS
-# EACH PATIENT: F_NAME, L_NAME, PESEL, ADDRESS(STREET, CITY, POSTAL_CODE)
-# SORTING/SERACH/PAGINATION OF DATA
-# do skminy znaczenie cyfr w peselu i wykorzystanie do filtrowania
-# dopasowanie do tego ludzi podawanych
-# sprawdzanie regexem postal code'u
 
 cred = credentials.Certificate("../firebaseCred.json")
 firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://assecoclinic-default-rtdb.firebaseio.com'
 })
-ref = db.reference("/")
-ref.set({
-    "patients":-1
-})
 ref = db.reference("/patients")
-data = {
-	"P1":
-	{
-		"firstName": "first name 1",
-		"lastName": "last name 1",
-		"PESEL": "11111111",
-		"Address": {
-            "city": "city1",
-            "street": "street1",
-            "postal": "postal1"
-        }
-	},
-	"P2":
-	{
-		"firstName": "first name 2",
-		"lastName": "last name 2",
-		"PESEL": "22222222",
-		"Address": {
-            "city": "city2",
-            "street": "street2",
-            "postal": "postal2"
-        }
-	},
-	"P3":
-	{
-		"firstName": "first name 3",
-		"lastName": "last name 3",
-		"PESEL": "33333333",
-		"Address": {
-            "city": "city3",
-            "street": "street3",
-            "postal": "postal3"
-        }
-	},
-	"P4":
-	{
-		"firstName": "first name 4",
-		"lastName": "last name 4",
-		"PESEL": "44444444",
-		"Address": {
-            "city": "city4",
-            "street": "street4",
-            "postal": "postal4"
-        }
-	},
-}
 
-for book in data:
-    ref.push(data[book])
-
-# config = dotenv_values("../.env")
-# firebasePass = config.get("PASS")
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE"], 
+    allow_headers=["*"],
+)
+
+from pydantic import BaseModel
 
 @app.get("/patients")
 async def getPatients():
     data = ref.get()
-    return data
+    result = [[xd, data[xd]] for xd in data]
+    return result
+
+class Patient(BaseModel):
+    firstName:str
+    lastName:str
+    pesel:str
+    city: str
+    street: str
+    postal: str
+
+@app.post("/addpatient")
+async def addPatient(patient: Patient):
+    ref.push({
+		"firstName": patient.firstName,
+		"lastName": patient.lastName,
+		"PESEL": patient.pesel,
+		"Address": {
+            "city": patient.city,
+            "street": patient.street,
+            "postal": patient.postal
+        }
+	})
+
+@app.put("/editPatient/{id}")
+async def editPatient(patient:Patient, id:str):
+    print(patient.city)
+    ref.child(id).update({
+		"firstName": patient.firstName,
+		"lastName": patient.lastName,
+		"PESEL": patient.pesel,
+		"Address": {
+            "city": patient.city,
+            "street": patient.street,
+            "postal": patient.postal
+        }
+	})
+
+@app.delete("/deletePatient/{id}")
+async def deletePatient(id: str):
+    ref.child(id).set({})
